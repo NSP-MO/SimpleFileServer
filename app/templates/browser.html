@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="panel">
+    <h2>Files</h2>
+    <nav class="breadcrumbs">
+      {% for label, url in breadcrumbs %}
+        <a href="{{ url }}">{{ label }}</a>
+        {% if not loop.last %}/ {% endif %}
+      {% endfor %}
+    </nav>
+
+    <form class="upload" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="path" value="{{ request.args.get('path', '') }}" />
+      <label class="button" for="file">Choose file</label>
+      <input type="file" id="file" name="file" required />
+      <button type="submit">Upload</button>
+    </form>
+
+    <form class="inline-form" action="{{ url_for('make_directory') }}" method="post">
+      <input type="hidden" name="path" value="{{ request.args.get('path', '') }}" />
+      <input type="text" name="folder-name" placeholder="New folder name" required />
+      <button type="submit">Create folder</button>
+    </form>
+
+    <table class="file-list">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Size (bytes)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if parent is not none %}
+          <tr>
+            <td colspan="4"><a href="{{ url_for('browse', path=parent) }}">&larr; Parent directory</a></td>
+          </tr>
+        {% endif %}
+        {% for entry in entries %}
+          <tr>
+            <td>
+              {% if entry.is_dir %}
+                <a href="{{ url_for('browse', path=(request.args.get('path', '') ~ '/' if request.args.get('path') else '') ~ entry.name) }}">{{ entry.name }}</a>
+              {% else %}
+                {{ entry.name }}
+              {% endif %}
+            </td>
+            <td>{{ 'Folder' if entry.is_dir else 'File' }}</td>
+            <td>{{ entry.size }}</td>
+            <td>
+              {% if not entry.is_dir %}
+                <a class="button" href="{{ url_for('browse', path=(request.args.get('path', '') ~ '/' if request.args.get('path') else '') ~ entry.name) }}">Download</a>
+              {% endif %}
+              <form class="inline-form" action="{{ url_for('delete') }}" method="post">
+                <input type="hidden" name="path" value="{{ request.args.get('path', '') }}" />
+                <input type="hidden" name="target" value="{{ entry.name }}" />
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4">Folder is empty</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}
